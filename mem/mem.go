@@ -4,8 +4,8 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/sabey/parquet-go/source"
 	"github.com/spf13/afero"
-	"github.com/xitongsys/parquet-go/source"
 )
 
 // desclare unexported in-memory file-system

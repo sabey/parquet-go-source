@@ -2,11 +2,11 @@ package gcs
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	"cloud.google.com/go/storage"
-	"github.com/xitongsys/parquet-go/source"
+	"github.com/pkg/errors"
+	"github.com/sabey/parquet-go/source"
 )
 
 var (

@@ -2,7 +2,6 @@ package http
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/xitongsys/parquet-go/source"
+	"github.com/pkg/errors"
+	"github.com/sabey/parquet-go/source"
 )
 
 type HttpReader struct {

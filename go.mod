@@ -1,4 +1,4 @@
-module github.com/xitongsys/parquet-go-source
+module github.com/sabey/parquet-go-source
 
 go 1.16
 
@@ -15,6 +15,7 @@ require (
 	github.com/golang/mock v1.4.3
 	github.com/ncw/swift v1.0.52
 	github.com/spf13/afero v1.2.2
-	github.com/xitongsys/parquet-go v1.5.1
+	github.com/sabey/parquet-go v1.5.1
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
+	github.com/pkg/errors v0.9.1
 )

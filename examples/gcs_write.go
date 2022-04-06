@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/xitongsys/parquet-go-source/gcs"
-	"github.com/xitongsys/parquet-go/writer"
+	"github.com/sabey/parquet-go-source/gcs"
+	"github.com/sabey/parquet-go/writer"
 )
 
 func main() {

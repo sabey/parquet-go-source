@@ -1,10 +1,10 @@
 package buffer
 
 import (
-	"errors"
 	"io"
 
-	"github.com/xitongsys/parquet-go/source"
+	"github.com/pkg/errors"
+	"github.com/sabey/parquet-go/source"
 )
 
 // BufferFile allows reading parquet messages from a memory buffer.

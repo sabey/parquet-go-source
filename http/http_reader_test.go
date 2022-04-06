@@ -1,9 +1,10 @@
 package http
 
 import (
-	"errors"
 	"strings"
 	"testing"
+
+	"github.com/pkg/errors"
 )
 
 func Test_http_reader_no_range_support(t *testing.T) {

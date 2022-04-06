@@ -4,7 +4,6 @@ package s3
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -14,7 +13,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/xitongsys/parquet-go/source"
+	"github.com/pkg/errors"
+	"github.com/sabey/parquet-go/source"
 )
 
 // S3File is ParquetFile for AWS S3

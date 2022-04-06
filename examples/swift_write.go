@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/ncw/swift"
-	"github.com/xitongsys/parquet-go/reader"
-	"github.com/xitongsys/parquet-go/writer"
+	"github.com/sabey/parquet-go/reader"
+	"github.com/sabey/parquet-go/writer"
 
-	"github.com/xitongsys/parquet-go-source/swift"
+	swiftsource "github.com/sabey/parquet-go-source/swift"
 )
 
 type Student struct {

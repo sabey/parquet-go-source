@@ -2,12 +2,12 @@ package azblob
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/pkg/errors"
 )
 
 func TestOpen_permissoin(t *testing.T) {

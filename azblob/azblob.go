@@ -2,13 +2,13 @@ package azblob
 
 import (
 	"context"
-	"errors"
 	"io"
 	"net/url"
 
 	"github.com/Azure/azure-pipeline-go/pipeline"
 	"github.com/Azure/azure-storage-blob-go/azblob"
-	"github.com/xitongsys/parquet-go/source"
+	"github.com/pkg/errors"
+	"github.com/sabey/parquet-go/source"
 )
 
 // AzBlockBlob is ParquetFile for azblob
