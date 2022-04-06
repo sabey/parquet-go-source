@@ -14,8 +14,8 @@ require (
 	github.com/colinmarc/hdfs/v2 v2.1.1
 	github.com/golang/mock v1.4.3
 	github.com/ncw/swift v1.0.52
-	github.com/spf13/afero v1.2.2
-	github.com/sabey/parquet-go v1.5.1
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/sabey/parquet-go v0.0.0-20220406193753-89667e9b8f74
+	github.com/spf13/afero v1.2.2
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 )
