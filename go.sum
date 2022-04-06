@@ -172,8 +172,10 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
-github.com/sabey/parquet-go v0.0.0-20220406193753-89667e9b8f74 h1:UvUDTllzkyTxL/fMcbukwrxA/TM7r9KFXRE6guLzzjM=
 github.com/sabey/parquet-go v0.0.0-20220406193753-89667e9b8f74/go.mod h1:eDhO1ZknWH0dD1n4laNCrj57gvmnDXRqjqN5kmGm4YA=
+github.com/sabey/parquet-go v0.0.0-20220406195015-1fe4eef2ab29 h1:rjWN95VDLOfwEPr3lvDdJBr8+Us906gHgMIQ+YjGuDQ=
+github.com/sabey/parquet-go v0.0.0-20220406195015-1fe4eef2ab29/go.mod h1:Jjsk2IkHHGyMjCbEHf9wmOx5IyYPkwEbe6gMpvlUbCw=
+github.com/sabey/parquet-go-source v0.0.0-20220406194322-e0a52bd89f5d/go.mod h1:s9ZCQMC05cEKKMQiEDCDai28RLeDry+Eb0Zxq68MOeE=
 github.com/spf13/afero v1.2.2 h1:5jhuqJyZCZf2JRofRvN/nIFgIWNzPa3/Vz8mYylgbWc=
 github.com/spf13/afero v1.2.2/go.mod h1:9ZxEEn6pIJ8Rxe320qSDBk6AsU0r9pR7Q4OcevTdifk=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
