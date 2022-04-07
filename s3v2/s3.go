@@ -70,13 +70,17 @@ func NewS3FileWriter(
 	uploaderOptions []func(*manager.Uploader),
 	cfgs ...*aws.Config,
 ) (source.ParquetFile, error) {
-	return NewS3FileWriterWithClient(
+	pf, err := NewS3FileWriterWithClient(
 		ctx,
 		s3.NewFromConfig(getConfig()),
 		bucket,
 		key,
 		uploaderOptions,
 	)
+	if err != nil {
+		return pf, errors.Wrap(err, "NewS3FileWriterWithClient")
+	}
+	return pf, nil
 }
 
 // NewS3FileWriterWithClient is the same as NewS3FileWriter but allows passing
@@ -97,12 +101,20 @@ func NewS3FileWriterWithClient(
 		Key:             key,
 	}
 
-	return file.Create(key)
+	pf, err := file.Create(key)
+	if err != nil {
+		return pf, errors.Wrap(err, "file.Create")
+	}
+	return pf, nil
 }
 
 // NewS3FileReader creates an S3 FileReader, to be used with NewParquetReader
 func NewS3FileReader(ctx context.Context, bucket string, key string, cfgs ...*aws.Config) (source.ParquetFile, error) {
-	return NewS3FileReaderWithClient(ctx, s3.NewFromConfig(getConfig()), bucket, key)
+	pf, err := NewS3FileReaderWithClient(ctx, s3.NewFromConfig(getConfig()), bucket, key)
+	if err != nil {
+		return pf, errors.Wrap(err, "NewS3FileReaderWithClient")
+	}
+	return pf, nil
 }
 
 // NewS3FileReaderWithClient is the same as NewS3FileReader but allows passing
@@ -118,29 +130,33 @@ func NewS3FileReaderWithClient(ctx context.Context, s3Client S3API, bucket strin
 		Key:        key,
 	}
 
-	return file.Open(key)
+	pf, err := file.Open(key)
+	if err != nil {
+		return pf, errors.Wrap(err, "file.Open")
+	}
+	return pf, nil
 }
 
 // Seek tracks the offset for the next Read. Has no effect on Write.
 func (s *S3File) Seek(offset int64, whence int) (int64, error) {
 	if whence < io.SeekStart || whence > io.SeekEnd {
-		return 0, errWhence
+		return 0, errors.Wrap(errWhence, "errWhence")
 	}
 
 	if s.fileSize > 0 {
 		switch whence {
 		case io.SeekStart:
 			if offset < 0 || offset > s.fileSize {
-				return 0, errInvalidOffset
+				return 0, errors.Wrap(errInvalidOffset, "errInvalidOffset")
 			}
 		case io.SeekCurrent:
 			offset += s.offset
 			if offset < 0 || offset > s.fileSize {
-				return 0, errInvalidOffset
+				return 0, errors.Wrap(errInvalidOffset, "errInvalidOffset")
 			}
 		case io.SeekEnd:
 			if offset > -1 || -offset > s.fileSize {
-				return 0, errInvalidOffset
+				return 0, errors.Wrap(errInvalidOffset, "errInvalidOffset")
 			}
 		}
 	}
@@ -153,7 +169,7 @@ func (s *S3File) Seek(offset int64, whence int) (int64, error) {
 // Read up to len(p) bytes into p and return the number of bytes read
 func (s *S3File) Read(p []byte) (n int, err error) {
 	if s.fileSize > 0 && s.offset >= s.fileSize {
-		return 0, io.EOF
+		return 0, errors.Wrap(io.EOF, "io.EOF")
 	}
 
 	numBytes := len(p)
@@ -169,7 +185,7 @@ func (s *S3File) Read(p []byte) (n int, err error) {
 	wab := manager.NewWriteAtBuffer(p)
 	bytesDownloaded, err := s.downloader.Download(s.ctx, wab, getObj)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "s.downloader.Download")
 	}
 
 	s.offset += bytesDownloaded
@@ -179,7 +195,7 @@ func (s *S3File) Read(p []byte) (n int, err error) {
 		bytesDownloaded = int64(len(p))
 	}
 
-	return int(bytesDownloaded), err
+	return int(bytesDownloaded), nil
 }
 
 // Write len(p) bytes from p to the S3 data stream
@@ -195,12 +211,13 @@ func (s *S3File) Write(p []byte) (n int, err error) {
 	writeError := s.err
 	s.lock.RUnlock()
 	if writeError != nil {
-		return 0, writeError
+		return 0, errors.Wrap(writeError, "writeError")
 	}
 
 	// prevent further writes upon error
 	bytesWritten, writeError := s.pipeWriter.Write(p)
 	if writeError != nil {
+		writeError = errors.Wrap(writeError, "s.pipeWriter.Write")
 		s.lock.Lock()
 		s.err = writeError
 		s.lock.Unlock()
@@ -219,7 +236,7 @@ func (s *S3File) Close() error {
 
 	if s.pipeWriter != nil {
 		if err = s.pipeWriter.Close(); err != nil {
-			return err
+			return errors.Wrap(err, "s.pipeWriter.Close")
 		}
 	}
 
@@ -228,7 +245,10 @@ func (s *S3File) Close() error {
 		err = <-s.writeDone
 	}
 
-	return err
+	if err != nil {
+		return errors.Wrap(err, "<-s.writeDone")
+	}
+	return nil
 }
 
 // Open creates a new S3 File instance to perform concurrent reads
@@ -238,7 +258,7 @@ func (s *S3File) Open(name string) (source.ParquetFile, error) {
 	s.lock.RUnlock()
 	if !readOpened {
 		if err := s.openRead(); err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "s.openRead")
 		}
 	}
 
@@ -299,6 +319,7 @@ func (s *S3File) openWrite() {
 		// upload data and signal done when complete
 		_, err := uploader.Upload(s.ctx, params)
 		if err != nil {
+			err = errors.Wrap(err, "uploader.Upload")
 			s.lock.Lock()
 			s.err = err
 			s.lock.Unlock()
@@ -322,7 +343,7 @@ func (s *S3File) openRead() error {
 
 	hoo, err := s.client.HeadObject(s.ctx, hoi)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "s.client.HeadObject")
 	}
 
 	s.lock.Lock()

@@ -2,6 +2,7 @@ package hdfs
 
 import (
 	"github.com/colinmarc/hdfs/v2"
+	"github.com/pkg/errors"
 	"github.com/sabey/parquet-go/source"
 )
 
@@ -21,7 +22,11 @@ func NewHdfsFileWriter(hosts []string, user string, name string) (source.Parquet
 		User:     user,
 		FilePath: name,
 	}
-	return res.Create(name)
+	pf, err := res.Create(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "res.Create")
+	}
+	return pf, nil
 }
 
 func NewHdfsFileReader(hosts []string, user string, name string) (source.ParquetFile, error) {
@@ -30,7 +35,11 @@ func NewHdfsFileReader(hosts []string, user string, name string) (source.Parquet
 		User:     user,
 		FilePath: name,
 	}
-	return res.Open(name)
+	pf, err := res.Open(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "res.Open")
+	}
+	return pf, nil
 }
 
 func (self *HdfsFile) Create(name string) (source.ParquetFile, error) {
@@ -44,10 +53,13 @@ func (self *HdfsFile) Create(name string) (source.ParquetFile, error) {
 	})
 	hf.FilePath = name
 	if err != nil {
-		return hf, err
+		return hf, errors.Wrap(err, "hdfs.NewClient")
 	}
 	hf.FileWriter, err = hf.Client.Create(name)
-	return hf, err
+	if err != nil {
+		return hf, errors.Wrap(err, "hf.Client.Create")
+	}
+	return hf, nil
 
 }
 func (self *HdfsFile) Open(name string) (source.ParquetFile, error) {
@@ -67,13 +79,20 @@ func (self *HdfsFile) Open(name string) (source.ParquetFile, error) {
 	})
 	hf.FilePath = name
 	if err != nil {
-		return hf, err
+		return hf, errors.Wrap(err, "hdfs.NewClient")
 	}
 	hf.FileReader, err = hf.Client.Open(name)
-	return hf, err
+	if err != nil {
+		return hf, errors.Wrap(err, "hf.Client.Open")
+	}
+	return hf, nil
 }
 func (self *HdfsFile) Seek(offset int64, pos int) (int64, error) {
-	return self.FileReader.Seek(offset, pos)
+	n, err := self.FileReader.Seek(offset, pos)
+	if err != nil {
+		return n, errors.Wrap(err, "self.FileReader.Seek")
+	}
+	return n, nil
 }
 
 func (self *HdfsFile) Read(b []byte) (cnt int, err error) {
@@ -86,11 +105,18 @@ func (self *HdfsFile) Read(b []byte) (cnt int, err error) {
 			break
 		}
 	}
-	return cnt, err
+	if err != nil {
+		return cnt, errors.Wrap(err, "self.FileReader.Read")
+	}
+	return cnt, nil
 }
 
 func (self *HdfsFile) Write(b []byte) (n int, err error) {
-	return self.FileWriter.Write(b)
+	n, err = self.FileWriter.Write(b)
+	if err != nil {
+		return n, errors.Wrap(err, "self.FileWriter.Write")
+	}
+	return n, nil
 }
 
 func (self *HdfsFile) Close() error {

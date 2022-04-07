@@ -3,6 +3,7 @@ package writerfile
 import (
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/sabey/parquet-go/source"
 )
 
@@ -31,7 +32,11 @@ func (self *WriterFile) Read(b []byte) (int, error) {
 }
 
 func (self *WriterFile) Write(b []byte) (int, error) {
-	return self.Writer.Write(b)
+	n, err := self.Writer.Write(b)
+	if err != nil {
+		return n, errors.Wrap(err, "self.Writer.Write")
+	}
+	return n, nil
 }
 
 func (self *WriterFile) Close() error {

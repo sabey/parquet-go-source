@@ -4,6 +4,7 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/sabey/parquet-go/source"
 	"github.com/spf13/afero"
 )
@@ -48,14 +49,18 @@ func NewMemFileWriter(name string, f OnCloseFunc) (source.ParquetFile, error) {
 
 	var m MemFile
 	m.OnClose = f
-	return m.Create(name)
+	pf, err := m.Create(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "m.Create")
+	}
+	return pf, nil
 }
 
 // Create - create in-memory file
 func (fs *MemFile) Create(name string) (source.ParquetFile, error) {
 	file, err := memFs.Create(name)
 	if err != nil {
-		return fs, err
+		return fs, errors.Wrap(err, "memFs.Create")
 	}
 
 	fs.File = file
@@ -74,12 +79,19 @@ func (fs *MemFile) Open(name string) (source.ParquetFile, error) {
 
 	fs.FilePath = name
 	fs.File, err = memFs.Open(name)
-	return fs, err
+	if err != nil {
+		return fs, errors.Wrap(err, "memFs.Open")
+	}
+	return fs, nil
 }
 
 // Seek - seek function
 func (fs *MemFile) Seek(offset int64, pos int) (int64, error) {
-	return fs.File.Seek(offset, pos)
+	n, err := fs.File.Seek(offset, pos)
+	if err != nil {
+		return n, errors.Wrap(err, "fs.File.Seek")
+	}
+	return n, nil
 }
 
 // Read - read file
@@ -93,23 +105,30 @@ func (fs *MemFile) Read(b []byte) (cnt int, err error) {
 			break
 		}
 	}
-	return cnt, err
+	if err != nil {
+		return cnt, errors.Wrap(err, "fs.File.Read")
+	}
+	return cnt, nil
 }
 
 // Write - write file in-memory
 func (fs *MemFile) Write(b []byte) (n int, err error) {
-	return fs.File.Write(b)
+	n, err = fs.File.Write(b)
+	if err != nil {
+		return n, errors.Wrap(err, "fs.File.Write")
+	}
+	return n, nil
 }
 
 // Close - close file and execute OnCloseFunc
 func (fs *MemFile) Close() error {
 	if err := fs.File.Close(); err != nil {
-		return err
+		return errors.Wrap(err, "fs.File.Close")
 	}
 	if fs.OnClose != nil {
 		f, _ := fs.Open(fs.FilePath)
 		if err := fs.OnClose(filepath.Base(fs.FilePath), f); err != nil {
-			return err
+			return errors.Wrap(err, "fs.OnClose")
 		}
 	}
 	return nil

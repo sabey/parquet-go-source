@@ -6,6 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -23,7 +24,7 @@ func getConfig() aws.Config {
 	}
 	c, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "config.LoadDefaultConfig"))
 	}
 	cfg = &c
 	return *cfg

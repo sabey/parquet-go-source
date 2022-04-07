@@ -40,7 +40,7 @@ func NewHttpReader(uri string, dedicatedTransport, ignoreTLSError bool, extraHea
 	client := &http.Client{Transport: transport}
 	req, err := http.NewRequest(http.MethodGet, uri, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "http.NewRequest")
 	}
 	for k, v := range extraHeaders {
 		req.Header.Add(k, v)
@@ -48,7 +48,7 @@ func NewHttpReader(uri string, dedicatedTransport, ignoreTLSError bool, extraHea
 	req.Header.Add(rangeHeader, fmt.Sprintf(rangeFormat, 0, 0))
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "client.Do")
 	}
 	defer resp.Body.Close()
 
@@ -65,7 +65,7 @@ func NewHttpReader(uri string, dedicatedTransport, ignoreTLSError bool, extraHea
 
 	size, err := strconv.ParseInt(tmp[1], 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse data size from %s: %s", contentRangeHeader, contentRange[0])
+		return nil, errors.Wrapf(err, "unable to parse data size from %s: %s", contentRangeHeader, contentRange[0])
 	}
 
 	return &HttpReader{
@@ -83,12 +83,16 @@ func (r *HttpReader) Create(_ string) (source.ParquetFile, error) {
 }
 
 func (r *HttpReader) Open(_ string) (source.ParquetFile, error) {
-	return NewHttpReader(
+	pf, err := NewHttpReader(
 		r.url,
 		r.dedicatedTransport,
 		r.httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify,
 		r.extraHeaders,
 	)
+	if err != nil {
+		return pf, errors.Wrap(err, "NewHttpReader")
+	}
+	return pf, nil
 }
 
 func (r *HttpReader) Seek(offset int64, pos int) (int64, error) {
@@ -115,7 +119,7 @@ func (r *HttpReader) Seek(offset int64, pos int) (int64, error) {
 func (r *HttpReader) Read(b []byte) (int, error) {
 	req, err := http.NewRequest(http.MethodGet, r.url, nil)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "http.NewRequest")
 	}
 
 	for k, v := range r.extraHeaders {
@@ -124,7 +128,7 @@ func (r *HttpReader) Read(b []byte) (int, error) {
 	req.Header.Add(rangeHeader, fmt.Sprintf(rangeFormat, r.offset, r.offset+int64(len(b)-1)))
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "r.httpClient.Do")
 	}
 
 	buf, err := ioutil.ReadAll(resp.Body)
@@ -137,7 +141,10 @@ func (r *HttpReader) Read(b []byte) (int, error) {
 	if r.offset > r.size {
 		r.offset = r.size
 	}
-	return bytesRead, err
+	if err != nil {
+		return bytesRead, errors.Wrap(err, "ioutil.ReadAll")
+	}
+	return bytesRead, nil
 }
 
 func (r *HttpReader) Write(_ []byte) (int, error) {

@@ -3,6 +3,7 @@ package local
 import (
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/sabey/parquet-go/source"
 )
 
@@ -12,11 +13,19 @@ type LocalFile struct {
 }
 
 func NewLocalFileWriter(name string) (source.ParquetFile, error) {
-	return (&LocalFile{}).Create(name)
+	pf, err := (&LocalFile{}).Create(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "(&LocalFile{}).Create")
+	}
+	return pf, nil
 }
 
 func NewLocalFileReader(name string) (source.ParquetFile, error) {
-	return (&LocalFile{}).Open(name)
+	pf, err := (&LocalFile{}).Open(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "(&LocalFile{}).Open")
+	}
+	return pf, nil
 }
 
 func (self *LocalFile) Create(name string) (source.ParquetFile, error) {
@@ -24,7 +33,10 @@ func (self *LocalFile) Create(name string) (source.ParquetFile, error) {
 	myFile := new(LocalFile)
 	myFile.FilePath = name
 	myFile.File = file
-	return myFile, err
+	if err != nil {
+		return myFile, errors.Wrap(err, "os.Create")
+	}
+	return myFile, nil
 }
 
 func (self *LocalFile) Open(name string) (source.ParquetFile, error) {
@@ -38,10 +50,17 @@ func (self *LocalFile) Open(name string) (source.ParquetFile, error) {
 	myFile := new(LocalFile)
 	myFile.FilePath = name
 	myFile.File, err = os.Open(name)
-	return myFile, err
+	if err != nil {
+		return myFile, errors.Wrap(err, "os.Open")
+	}
+	return myFile, nil
 }
 func (self *LocalFile) Seek(offset int64, pos int) (int64, error) {
-	return self.File.Seek(offset, pos)
+	n, err := self.File.Seek(offset, pos)
+	if err != nil {
+		return n, errors.Wrap(err, "self.File.Seek")
+	}
+	return n, nil
 }
 
 func (self *LocalFile) Read(b []byte) (cnt int, err error) {
@@ -54,13 +73,23 @@ func (self *LocalFile) Read(b []byte) (cnt int, err error) {
 			break
 		}
 	}
-	return cnt, err
+	if err != nil {
+		return cnt, errors.Wrap(err, "self.File.Read")
+	}
+	return cnt, nil
 }
 
 func (self *LocalFile) Write(b []byte) (n int, err error) {
-	return self.File.Write(b)
+	n, err = self.File.Write(b)
+	if err != nil {
+		return n, errors.Wrap(err, "self.File.Write")
+	}
+	return n, nil
 }
 
 func (self *LocalFile) Close() error {
-	return self.File.Close()
+	if err := self.File.Close(); err != nil {
+		return errors.Wrap(err, "self.File.Close")
+	}
+	return nil
 }

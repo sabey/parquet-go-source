@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
@@ -48,7 +49,7 @@ func TestSeek(t *testing.T) {
 			if offset != tc.expectedOffset {
 				t.Errorf("expected offset to be %d but got %d", tc.expectedOffset, offset)
 			}
-			if err != tc.expectedError {
+			if !errors.Is(err, tc.expectedError) {
 				t.Errorf("expected error to be %v but got %v", tc.expectedError, err)
 			}
 		})
@@ -68,7 +69,7 @@ func TestReadBeyondEOF(t *testing.T) {
 		t.Errorf("expected to read 0 bytes but got %d", readBytes)
 	}
 
-	if err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		t.Errorf("expected error %q but got %q", io.EOF.Error(), err.Error())
 	}
 }
@@ -125,7 +126,7 @@ func TestReadDownloadError(t *testing.T) {
 		t.Errorf("expected to read 0 bytes but got %d", readBytes)
 	}
 
-	if err.Error() != errMessage {
+	if !strings.HasSuffix(err.Error(), errMessage) {
 		t.Errorf("expected error to be %q but got %q", errMessage, err.Error())
 	}
 }
@@ -176,7 +177,7 @@ func TestWriteWithPriorEncounteredError(t *testing.T) {
 		t.Errorf("expected number of byte written to be 0 but got %d", writtenBytes)
 	}
 
-	if err.Error() != errMessage {
+	if !strings.HasSuffix(err.Error(), errMessage) {
 		t.Errorf("expected error to be %q but got %q", errMessage, err.Error())
 	}
 }
@@ -380,7 +381,7 @@ func TestOpenWriteUploadFailuresPreventFurtherWrites(t *testing.T) {
 
 	// close signals write completion
 	err = s.Close()
-	if err.Error() != errMessage {
+	if !strings.HasSuffix(err.Error(), errMessage) {
 		t.Errorf("expected error to be %q but got %q", errMessage, err.Error())
 	}
 
@@ -390,7 +391,7 @@ func TestOpenWriteUploadFailuresPreventFurtherWrites(t *testing.T) {
 		t.Errorf("expected number of byte written to be 0 but got %d", writtenBytes)
 	}
 
-	if err.Error() != errMessage {
+	if !strings.HasSuffix(err.Error(), errMessage) {
 		t.Errorf("expected error to be %q but got %q", errMessage, err.Error())
 	}
 }
@@ -426,7 +427,7 @@ func TestOpenReadFileSizeError(t *testing.T) {
 	}
 
 	err := s.openRead()
-	if err.Error() != errMessage {
+	if !strings.HasSuffix(err.Error(), errMessage) {
 		t.Errorf("expected error %s but got %s", errMessage, err.Error())
 	}
 }

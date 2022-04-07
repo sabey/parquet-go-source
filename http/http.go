@@ -24,17 +24,25 @@ func (mfw *MultipartFileWrapper) Create(_ string) (source.ParquetFile, error) {
 func (mfw *MultipartFileWrapper) Open(_ string) (source.ParquetFile, error) {
 	file, err := mfw.FH.Open()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "mfw.FH.Open")
 	}
 	return NewMultipartFileWrapper(mfw.FH, file), nil
 }
 
 func (mfw *MultipartFileWrapper) Seek(offset int64, pos int) (int64, error) {
-	return mfw.F.Seek(offset, pos)
+	n, err := mfw.F.Seek(offset, pos)
+	if err != nil {
+		return n, errors.Wrap(err, "mfw.F.Seek")
+	}
+	return n, nil
 }
 
 func (mfw *MultipartFileWrapper) Read(p []byte) (int, error) {
-	return mfw.F.Read(p)
+	n, err := mfw.F.Read(p)
+	if err != nil {
+		return n, errors.Wrap(err, "mfw.F.Read")
+	}
+	return n, nil
 }
 
 func (mfw *MultipartFileWrapper) Write(_ []byte) (int, error) {
@@ -42,5 +50,8 @@ func (mfw *MultipartFileWrapper) Write(_ []byte) (int, error) {
 }
 
 func (mfw *MultipartFileWrapper) Close() error {
-	return mfw.F.Close()
+	if err := mfw.F.Close(); err != nil {
+		return errors.Wrap(err, "mfw.F.Close")
+	}
+	return nil
 }

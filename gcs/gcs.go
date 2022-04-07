@@ -38,7 +38,11 @@ func NewGcsFileWriter(ctx context.Context, projectId string, bucketName string, 
 		Ctx:        ctx,
 		FilePath:   name,
 	}
-	return res.Create(name)
+	pf, err := res.Create(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "res.Create")
+	}
+	return pf, nil
 }
 
 func NewGcsFileWriterWithClient(ctx context.Context, client *storage.Client, projectId string, bucketName string, name string) (source.ParquetFile, error) {
@@ -50,7 +54,11 @@ func NewGcsFileWriterWithClient(ctx context.Context, client *storage.Client, pro
 		externalClient: true,
 		FilePath:       name,
 	}
-	return res.Create(name)
+	pf, err := res.Create(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "res.Create")
+	}
+	return pf, nil
 }
 
 func NewGcsFileReader(ctx context.Context, projectId string, bucketName string, name string) (source.ParquetFile, error) {
@@ -60,7 +68,11 @@ func NewGcsFileReader(ctx context.Context, projectId string, bucketName string, 
 		Ctx:        ctx,
 		FilePath:   name,
 	}
-	return res.Open(name)
+	pf, err := res.Open(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "res.Open")
+	}
+	return pf, nil
 }
 
 func NewGcsFileReaderWithClient(ctx context.Context, client *storage.Client, projectId string, bucketName string, name string) (source.ParquetFile, error) {
@@ -72,7 +84,11 @@ func NewGcsFileReaderWithClient(ctx context.Context, client *storage.Client, pro
 		externalClient: true,
 		FilePath:       name,
 	}
-	return res.Open(name)
+	pf, err := res.Open(name)
+	if err != nil {
+		return pf, errors.Wrap(err, "res.Open")
+	}
+	return pf, nil
 }
 
 func (self *GcsFile) Create(name string) (source.ParquetFile, error) {
@@ -87,13 +103,13 @@ func (self *GcsFile) Create(name string) (source.ParquetFile, error) {
 	}
 	gcs.FilePath = name
 	if err != nil {
-		return gcs, err
+		return gcs, errors.Wrap(err, "storage.NewClient")
 	}
 	// must use existing bucket
 	gcs.Bucket = gcs.Client.Bucket(self.BucketName)
 	obj := gcs.Bucket.Object(name)
 	gcs.FileWriter = obj.NewWriter(self.Ctx)
-	return gcs, err
+	return gcs, nil
 }
 
 func (self *GcsFile) Open(name string) (source.ParquetFile, error) {
@@ -107,7 +123,7 @@ func (self *GcsFile) Open(name string) (source.ParquetFile, error) {
 		gcs.externalClient = self.externalClient
 	}
 	if err != nil {
-		return gcs, err
+		return gcs, errors.Wrap(err, "storage.NewClient")
 	}
 	if name == "" {
 		gcs.FilePath = self.FilePath
@@ -119,34 +135,34 @@ func (self *GcsFile) Open(name string) (source.ParquetFile, error) {
 	obj := gcs.Bucket.Object(gcs.FilePath)
 	attrs, err := obj.Attrs(self.Ctx)
 	if err != nil {
-		return gcs, err
+		return gcs, errors.Wrap(err, "obj.Attrs")
 	}
 	gcs.fileSize = attrs.Size
 	gcs.Ctx = self.Ctx
 	gcs.ProjectId = self.ProjectId
 	gcs.BucketName = self.BucketName
-	return gcs, err
+	return gcs, nil
 }
 
 func (self *GcsFile) Seek(offset int64, whence int) (int64, error) {
 	if whence < io.SeekStart || whence > io.SeekEnd {
-		return 0, errWhence
+		return 0, errors.Wrap(errWhence, "errWhence")
 	}
 
 	if self.fileSize > 0 {
 		switch whence {
 		case io.SeekStart:
 			if offset < 0 || offset > self.fileSize {
-				return 0, errInvalidOffset
+				return 0, errors.Wrap(errInvalidOffset, "errInvalidOffset")
 			}
 		case io.SeekCurrent:
 			offset += self.offset
 			if offset < 0 || offset > self.fileSize {
-				return 0, errInvalidOffset
+				return 0, errors.Wrap(errInvalidOffset, "errInvalidOffset")
 			}
 		case io.SeekEnd:
 			if offset > -1 || -offset > self.fileSize {
-				return 0, errInvalidOffset
+				return 0, errors.Wrap(errInvalidOffset, "errInvalidOffset")
 			}
 		}
 	}
@@ -158,7 +174,7 @@ func (self *GcsFile) Seek(offset int64, whence int) (int64, error) {
 
 func (self *GcsFile) Read(b []byte) (cnt int, err error) {
 	if self.fileSize > 0 && self.offset >= self.fileSize {
-		return 0, io.EOF
+		return 0, errors.Wrap(io.EOF, "io.EOF")
 	}
 
 	ln := len(b)
@@ -175,7 +191,7 @@ func (self *GcsFile) Read(b []byte) (cnt int, err error) {
 		}
 		self.FileReader, err = obj.NewRangeReader(self.Ctx, self.offset, length)
 		if err != nil {
-			return
+			return cnt, errors.Wrap(err, "obj.NewRangeReader")
 		}
 	}
 	defer self.FileReader.Close()
@@ -189,29 +205,36 @@ func (self *GcsFile) Read(b []byte) (cnt int, err error) {
 		}
 	}
 	self.offset += int64(cnt)
-	return cnt, err
+	if err != nil {
+		return cnt, errors.Wrap(err, "self.FileReader.Read")
+	}
+	return cnt, nil
 }
 
 func (self *GcsFile) Write(b []byte) (n int, err error) {
-	return self.FileWriter.Write(b)
+	n, err = self.FileWriter.Write(b)
+	if err != nil {
+		return n, errors.Wrap(err, "self.FileWriter.Write")
+	}
+	return n, nil
 }
 
 func (self *GcsFile) Close() error {
 	if self.FileReader != nil {
 		if err := self.FileReader.Close(); err != nil {
-			return err
+			return errors.Wrap(err, "self.FileReader.Close")
 		}
 	}
 	if self.FileWriter != nil {
 		if err := self.FileWriter.Close(); err != nil {
-			return err
+			return errors.Wrap(err, "self.FileWriter.Close")
 		}
 	}
 	if self.Client != nil && !self.externalClient {
 		err := self.Client.Close()
 		self.Client = nil
 		if err != nil {
-			return err
+			return errors.Wrap(err, "self.Client.Close")
 		}
 	}
 	return nil

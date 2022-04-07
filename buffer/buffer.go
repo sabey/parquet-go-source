@@ -72,7 +72,7 @@ func (bf *BufferFile) Read(p []byte) (n int, err error) {
 	bf.loc += n
 
 	if bf.loc == len(bf.buff) {
-		return n, io.EOF
+		return n, errors.Wrap(io.EOF, "io.EOF")
 	}
 
 	return n, nil
